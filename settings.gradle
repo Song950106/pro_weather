@@ -1,0 +1,11 @@
+rootProject.name='Weather'
+include ':app'
+setBinding(new Binding([gradle: this]))
+evaluate(new File(
+  settingsDir,
+  '../weather_flutter/.android/include_flutter.groovy'
+))
+
+include ':weather_flutter'
+project(':weather_flutter').projectDir = new File('../weather_flutter')
+
