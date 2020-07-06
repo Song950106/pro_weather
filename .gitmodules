@@ -1,0 +1,3 @@
+[submodule "flutter_weather"]
+	path = flutter_weather
+	url = git@github.com:Song950106/flutter_weather.git
