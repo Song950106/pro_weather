@@ -1,27 +1,27 @@
 package com.example.weather;
 
+
 import androidx.annotation.NonNull;
 
 import android.os.Bundle;
 import android.util.Log;
 
-import io.flutter.embedding.android.FlutterActivity;
+import com.example.weather.network.RetrofitUtils;
+import com.example.weather.network.WeatherApi;
+import com.idlefish.flutterboost.containers.BoostFlutterActivity;
+
 import io.flutter.embedding.engine.FlutterEngine;
 
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugins.GeneratedPluginRegistrant;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.scalars.ScalarsConverterFactory;
-import retrofit2.http.GET;
-import retrofit2.http.Path;
-import retrofit2.http.Query;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
-public class MainActivity extends FlutterActivity {
+
+public class MainActivity extends BoostFlutterActivity {
 
     private final String TAG = "MainActivity";
     public final String METHOD_CHANNEL = "com.example.weather.methodChannel";
@@ -29,10 +29,11 @@ public class MainActivity extends FlutterActivity {
     public final String QUERY_TYPE_WEEKLY = "7d";
     public final String QUERY_TYPE_DAILY = "24h";
     public final String KEY = "2869245148564fd0a43251b16a168cbd";
-    public String jsonData = null;
+    public String responseBody ;
     public MethodChannel methodChannel;
     public EventChannel eventChannel;
     public EventChannel.EventSink eventSink;
+
 
 
     @Override
@@ -45,7 +46,8 @@ public class MainActivity extends FlutterActivity {
 //                        .initialRoute("/")
 //                        .build(MainActivity.this)
 //        );
-        GeneratedPluginRegistrant.registerWith(MyApplication.getFlutterEngine());
+//        GeneratedPluginRegistrant.registerWith(MyApplication.getFlutterEngine());
+        PageRouter.openPageByUrl(this,"mainPage",null,0);
     }
 
     @Override
@@ -55,7 +57,7 @@ public class MainActivity extends FlutterActivity {
         methodChannel.setMethodCallHandler(
                 (call, result) -> {
                     if ("getWeatherData".equals(call.method)) {
-                        testNetwork();
+                        testNetwork(result);
                     } else {
                         result.notImplemented();
                     }
@@ -78,44 +80,48 @@ public class MainActivity extends FlutterActivity {
         );
     }
 
-    public void  testNetwork(){
+    public void  testNetwork(MethodChannel.Result result){
         Log.d(TAG, "testNetwork: ==============");
-//        https://devapi.heweather.net/v7/weather/7d
-        Retrofit city_retrofit = new Retrofit.Builder().
-                addConverterFactory(ScalarsConverterFactory.create()).
-                baseUrl("https://geoapi.heweather.net/").
-                build();
-        Retrofit weather_retrofit = new Retrofit.Builder().
-                addConverterFactory(ScalarsConverterFactory.create()).
-                baseUrl("https://devapi.heweather.net/").
-                build();
-//        Call<String> call = retrofit.create(WeatherCall.class).getData("110101","138cf8679b0eb0790a904a6a9996e1c0","all");
-        Call<String> city_call = city_retrofit.create(WeatherCall.class).getCity("beijing",KEY,"fuzzy");
-        Call<String> weekly_weather_call = weather_retrofit.create(WeatherCall.class).getWeatherData(QUERY_TYPE_WEEKLY,"101010100",KEY);
-        Call<String> daily_weather_call = weather_retrofit.create(WeatherCall.class).getWeatherData(QUERY_TYPE_DAILY,"101010100",KEY);
-        weekly_weather_call.enqueue(new Callback<String>() {
-            @Override
-            public void onResponse(Call call, Response response) {
-                assert response.body() != null;
-                jsonData = response.body().toString();
-                if(null != eventSink)
-                    eventSink.success(jsonData);
-                else
-                    Log.d(TAG, "onResponse: eventSink is null !!!!!!!!!");
-                Log.d(TAG, "onResponse: response body is " + response.body());
-            }
 
-            @Override
-            public void onFailure(Call call, Throwable t) {
-                Log.d(TAG, "onFailure: " + t.getMessage());
-            }
-        });
-    }
+//        Observable<String> city_call = RetrofitUtils.getApiService(WeatherApi.class,"https://geoapi.heweather.net/").
+//                getCity("beijing",KEY,"fuzzy");
 
-    public interface WeatherCall {
-        @GET("v2/city/lookup")
-        Call<String> getCity(@Query("location") String location,@Query("key") String key,@Query("mode") String mode);
-        @GET("v7/weather/{dataType}")
-        Call<String> getWeatherData(@Path ("dataType")String dataType ,@Query("location") String location, @Query("key") String key);
+        // network is unavailable
+        if(!MyApplication.isOnline()){
+            Log.d(TAG, "testNetwork: status ");
+            result.success(-1);
+            return;
+        }
+
+        RetrofitUtils.getApiService(WeatherApi.class,"https://devapi.heweather.net/").
+                getWeatherData(QUERY_TYPE_WEEKLY,"101010100",KEY).
+                subscribeOn(Schedulers.io()).
+                observeOn(AndroidSchedulers.mainThread()).
+                subscribe(new Observer<String>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onNext(String value) {
+                        Log.d(TAG, "onNext: " + value);
+                        // no error
+                        result.success(0);
+                        eventSink.success(value);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        result.success(-1);
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+//        Observable<String> daily_weather_call = RetrofitUtils.getApiService(WeatherApi.class,"https://devapi.heweather.net/").
+//                getWeatherData(QUERY_TYPE_DAILY,"101010100",KEY);
     }
 }

@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Weather</string>
+    <string name="connect_error">connect_error</string>
+    <string name="connect_timeout">connect_timeout</string>
+    <string name="bad_network">bad_network</string>
+    <string name="parse_error">parse_error</string>
+    <string name="unknown_error">unknown_error</string>
 </resources>

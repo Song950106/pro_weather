@@ -3,6 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.weather">
 
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".MyApplication"
         android:allowBackup="true"
@@ -10,7 +13,10 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+        android:hardwareAccelerated="true"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"
+        tools:ignore="AllowBackup">
         <activity android:name=".MainActivity"
                   android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity">
@@ -19,6 +25,10 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <meta-data android:name="flutterEmbedding"
+                android:value="2"/>
+            <meta-data android:name="io.flutter.embedding.android.SplashScreenDrawable" android:resource="@drawable/loading"/>
         </activity>
 
     </application>
